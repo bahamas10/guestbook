@@ -161,8 +161,10 @@ run-test() {
 load-colors() {
 	local want_color=$1
 
+	[[ $(type -P tput) ]] || want_color='never'
+
 	if [[ $want_color == 'auto' ]]; then
-		if [[ -t 1 && -z $NO_COLOR && $TERM != 'dumb' ]]; then
+		if [[ -t 1 && -z $NO_COLOR ]]; then
 			want_color='always'
 		else
 			want_color='never'
@@ -171,11 +173,11 @@ load-colors() {
 
 	case "$want_color" in
 		always)
-			RED=$'\e[31m'
-			GREEN=$'\e[32m'
-			YELLOW=$'\e[33m'
-			BOLD=$'\e[1m'
-			RESET=$'\e[0m'
+			RED=$(tput setaf 1)
+			GREEN=$(tput setaf 2)
+			YELLOW=$(tput setaf 3)
+			BOLD=$(tput bold)
+			RESET=$(tput sgr0)
 			;;
 		never)
 			RED=
