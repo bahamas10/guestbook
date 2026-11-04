@@ -44,7 +44,7 @@ Format
 ```
 
 Where `<username>` is a valid GitHub username and `<emoji>` is a single emoji
-(or character, or visible grapheme).
+(or visible Unicode code point).
 
 ### Rules
 
@@ -55,8 +55,7 @@ Where `<username>` is a valid GitHub username and `<emoji>` is a single emoji
   match the filename.
 - Use exactly one space between words: ex: `dave< >was< >here< >😎`.
 - The file must contain exactly one line and end with a newline.
-- The final item must be one visible Unicode grapheme (any character is also
-  valid if you're boring and hate emoji).
+- The final item must be one emoji or single Unicode code point.
 - The file must not exceed 1024 bytes.
 
 Notes

@@ -5,8 +5,7 @@
 # I know, it's perl - isn't that crazy?! I would have liked to use bash, but i
 # wasn't able to validate the emoji in a consistent way that handled compound
 # emojis.  don't deep-dive into emojis - they are a stupid rabbit hole and omg
-# they are hard to validate lol.  but, perl can do it.  well, it can actually
-# validate "1 visible grapheme" but that's good enough for me.
+# they are hard to validate lol.  but, perl can do it kinda.
 #
 # # Created
 # Author: Dave Eddy <ysap@daveeddy.com>
@@ -21,6 +20,15 @@ use warnings;
 
 use Encode qw(decode FB_CROAK);
 use File::Basename qw(basename);
+use FindBin qw($RealBin);
+
+my $EMOJI_FILE = "$RealBin/../data/emoji-test.txt";
+
+# see https://github.com/bahamas10/guestbook/issues/62
+my %GRANDFATHERED = (
+	'arch-err' => 1,
+	'adrad1234' => 1,
+);
 
 # get file argument
 if (@ARGV != 1) {
@@ -38,6 +46,40 @@ sub fail {
 	print STDERR "FAIL: $file - $message\n";
 	exit 1;
 }
+
+# load the Unicode emoji list
+sub load_emojis {
+	my %emojis;
+
+	open my $fh, '<:encoding(UTF-8)', $EMOJI_FILE
+	    or fail("cannot open emoji data: $!");
+
+	local $/ = "\n";
+	while (my $entry = <$fh>) {
+		my ($points, $status) =
+		    $entry =~ /\A([0-9A-F ]+)\s*;\s*([\w-]+)/;
+
+		next unless defined $status;
+		next unless $status eq 'fully-qualified'
+		    || $status eq 'minimally-qualified'
+		    || $status eq 'unqualified';
+
+		my @points = split(' ', $points);
+		my @characters = map { chr(hex($_)) } @points;
+		my $value = join('', @characters);
+
+		$emojis{$value} = 1;
+	}
+
+	close $fh or fail("cannot close emoji data: $!");
+
+	# ensure we read *something*
+	keys %emojis or fail('emoji data contains no accepted sequences');
+
+	return %emojis;
+}
+
+my %emojis = load_emojis();
 
 # ensure it is a regular file
 -f $file or fail("not a regular file: $file");
@@ -97,6 +139,15 @@ my @graphemes = $symbol =~ /\X/g;
 # ensure the visible grapheme is *not* a control character
 $symbol =~ /[^\p{Z}\p{C}]/
     or fail('the final character cannot be whitespace or a control character');
+
+# check if the final "symbol" is a single character or single emoji.
+unless (exists $GRANDFATHERED{$login}) {
+	my $is_character = $symbol =~ /\A[\p{L}\p{N}\p{P}\p{S}]\z/
+	    && $symbol !~ /\p{Default_Ignorable_Code_Point}/;
+	my $is_emoji = exists $emojis{$symbol};
+	($is_emoji || $is_character)
+	    or fail("final symbol must be a single character or emoji");
+}
 
 # ok! at this point we are sure the file is valid (probably)
 print "OK: $file\n";
