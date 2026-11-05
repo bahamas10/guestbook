@@ -18,7 +18,7 @@
 use strict;
 use warnings;
 
-use Encode qw(decode FB_CROAK);
+use Encode qw(encode decode FB_CROAK);
 use File::Basename qw(basename);
 use FindBin qw($RealBin);
 
@@ -129,6 +129,7 @@ sub validate_file {
 	my ($have_login, $symbol) =
 	    $line =~ /\A([^ ]+) [wW][aA][sS] [hH][eE][rR][eE] (.+)\z/s;
 	defined $symbol or fail('expected: <username> was here <char>');
+	my $symbolutf8 = encode('UTF-8', $symbol);
 
 	# ensure the login we found in the file *looks* correct
 	$have_login =~ /\A[A-Za-z0-9-]+\z/
@@ -150,7 +151,7 @@ sub validate_file {
 	    );
 
 	# ensure the visible grapheme is *not* a control character
-	$symbol =~ /[^\p{Z}\p{C}]/
+	$symbolutf8 =~ /[^\p{Z}\p{C}]/
 	    or fail(
 		'the final character cannot be whitespace '
 		. 'or a control character'
