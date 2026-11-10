@@ -1,4 +1,5 @@
 @echo off
+setlocal
 
 :check-perl
 perl -v > nul 2> nul
@@ -10,7 +11,9 @@ echo the path to Perl executable.
 goto end
 
 :run-validate-file
-if %script_name:~-4%==.cmd set script_name=%script_name:~0,-4%
+set script_name=%0
+if %script_name:~-4,1%==. set script_name=%script_name:~0,-4%
 perl %script_name% %1
 
 :end
+endlocal
