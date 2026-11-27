@@ -20,6 +20,7 @@ use warnings;
 
 use Encode qw(decode FB_CROAK);
 use File::Basename qw(basename);
+use File::Spec;
 use FindBin qw($RealBin);
 
 my $EMOJI_FILE = "$RealBin/../data/emoji-test.txt";
@@ -29,6 +30,8 @@ my %GRANDFATHERED = (
 	'arch-err' => 1,
 	'adrad1234' => 1,
 );
+
+my $GHA_FORMAT = $ENV{CI};
 
 # get file argument
 if (@ARGV < 1) {
@@ -184,6 +187,16 @@ for my $arg (@ARGV) {
 		print "OK: $arg\n";
 	} else {
 		print STDERR "FAIL: $arg - $@";
+		if ($GHA_FORMAT) {
+			my $resolved_path = File::Spec->canonpath($arg);
+			# "line=1" is necessary since the default (contrary
+			# to GH docs) is "0", and thus results in no annotation
+			# being shown
+			print "::error file="
+				. $resolved_path
+				. ",line=1::"
+				. $@;
+		}
 		$code = 1;
 	}
 }
